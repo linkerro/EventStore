@@ -5,6 +5,10 @@ VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore", "EventStore\EventStore.csproj", "{E6409E13-3B07-468E-A3C7-548B190AA7B6}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Specs", "Specs", "{CB4F66C2-86C6-4C7F-B57A-1D5D8CBEF1D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStoreSpecs", "EventStoreSpecs\EventStoreSpecs.csproj", "{C92DCF65-9879-4ED8-9642-A892887B3C85}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +19,16 @@ Global
 		{E6409E13-3B07-468E-A3C7-548B190AA7B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E6409E13-3B07-468E-A3C7-548B190AA7B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E6409E13-3B07-468E-A3C7-548B190AA7B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C92DCF65-9879-4ED8-9642-A892887B3C85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C92DCF65-9879-4ED8-9642-A892887B3C85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C92DCF65-9879-4ED8-9642-A892887B3C85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C92DCF65-9879-4ED8-9642-A892887B3C85}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C92DCF65-9879-4ED8-9642-A892887B3C85} = {CB4F66C2-86C6-4C7F-B57A-1D5D8CBEF1D1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8F9B97C8-F432-4E11-ADD6-05D4C27C7873}
