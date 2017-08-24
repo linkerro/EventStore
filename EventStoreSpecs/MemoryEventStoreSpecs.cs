@@ -86,7 +86,7 @@ namespace EventStoreSpecs
                 var storedEvent1 = eventStore.Save(eventToBeSaved1);
                 var storedEvent2 = eventStore.Save(eventToBeSaved2);
 
-                var expectedEvents = new List<IEvent> { storedEvent1, storedEvent2 };
+                var expectedEvents = new List<Event> { storedEvent1, storedEvent2 };
                 var retreivedEvents = eventStore.Get(new List<Guid> { storedEvent1.Id, storedEvent2.Id });
 
                 Assert.AreEqual(JsonConvert.SerializeObject(expectedEvents), JsonConvert.SerializeObject(retreivedEvents));
@@ -152,13 +152,13 @@ namespace EventStoreSpecs
         }
     }
 
-    public class TestEvent : IEvent
+    public class TestEvent : Event
     {
         public Guid Id { get; set; }
         public string Property1 { get; set; }
     }
 
-    public class TestEvent2 : IEvent
+    public class TestEvent2 : Event
     {
         public Guid Id { get; set; }
         public string Property1 { get; set; }

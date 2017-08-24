@@ -10,7 +10,7 @@ namespace EventStore
         Type type;
         Dictionary<T, List<Guid>> index = new Dictionary<T, List<Guid>>();
 
-        public void Add(IEvent @event)
+        public void Add(Event @event)
         {
             var key = JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(@event));
             if (!index.ContainsKey(key))

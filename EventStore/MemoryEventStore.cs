@@ -2,7 +2,6 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
 
 namespace EventStore
@@ -10,9 +9,9 @@ namespace EventStore
     public class MemoryEventStore
     {
         Dictionary<Guid, string> events = new Dictionary<Guid, string>();
-        private Dictionary<Type,dynamic> indexes=new Dictionary<Type, dynamic>();
+        private Dictionary<Type, dynamic> indexes = new Dictionary<Type, dynamic>();
 
-        public IEvent Save(IEvent @event)
+        public Event Save(Event @event)
         {
             var storedEvent = @event.Copy();
             storedEvent.Id = Guid.NewGuid();
@@ -20,22 +19,34 @@ namespace EventStore
             return storedEvent;
         }
 
-        public T Get<T>(Guid id) where T:IEvent
+        public T Get<T>(Guid id) where T : Event
         {
             return JsonConvert.DeserializeObject<T>(events[id]);
         }
 
-        public IEnumerable<dynamic> Get(IEnumerable<Guid> ids)
+        public IEnumerable<Event> Get(IEnumerable<Guid> ids)
         {
             var serializedEvents = events
                 .Where(e => ids.Contains(e.Key))
-                .Select(e=>e.Value);
-            return serializedEvents
+                .Select(e => e.Value);
+            var partiallyParsedEvents = serializedEvents
                 .Select(e => JObject.Parse(e))
                 .ToList();
+
+            var eventClasses = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => typeof(Event).IsAssignableFrom(type))
+                .ToArray();
+
+            var parsedEvents = partiallyParsedEvents
+                .Select(e => new { e, @class = eventClasses.Single(c => c.Name == e["Name"].ToString()) })
+                .Select(c => (Event)c.e.ToObject(c.@class))
+                .ToList();
+
+            return parsedEvents;
         }
 
-        public void Index<T>(IEvent @event)
+        public void Index<T>(Event @event)
         {
             var indexType = typeof(T);
             if (!indexes.ContainsKey(indexType))
@@ -47,7 +58,7 @@ namespace EventStore
             index.Add(@event);
         }
 
-        public IEnumerable<dynamic> GetByIndex<T>(T key)
+        public IEnumerable<Event> GetByIndex<T>(T key)
         {
             var indexType = typeof(T);
             var index = indexes[indexType];
@@ -55,11 +66,11 @@ namespace EventStore
             return Get(eventIds);
         }
 
-        public IEnumerable<dynamic> GetByIndexKeys<T>(IEnumerable<T> keys)
+        public IEnumerable<Event> GetByIndexKeys<T>(IEnumerable<T> keys)
         {
             var indexType = typeof(T);
             var index = indexes[indexType];
-            IEnumerable<Guid> eventIds = keys.SelectMany<T,Guid>(k => index.GetByKey(k));
+            IEnumerable<Guid> eventIds = keys.SelectMany<T, Guid>(k => index.GetByKey(k));
             return Get(eventIds);
         }
     }

@@ -5,21 +5,29 @@ using System.Text;
 
 namespace EventStore
 {
-    public interface IEvent
+    public class Event
     {
-        Guid Id { get; set; }
+        public Guid Id { get; set; }
+        public int Version { get; set; }
+        public string Name
+        {
+            get
+            {
+                return GetType().Name;
+            }
+        }
     }
 
     public static class EventExtensions
     {
-        public static T Copy<T>(this IEvent @event)where T:IEvent
+        public static T Copy<T>(this Event @event) where T : Event
         {
             return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(@event));
         }
 
-        public static IEvent Copy(this IEvent @event)
+        public static Event Copy(this Event @event)
         {
-            return (IEvent)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(@event), @event.GetType());
+            return (Event)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(@event), @event.GetType());
         }
     }
 }
