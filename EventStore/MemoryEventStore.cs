@@ -33,14 +33,8 @@ namespace EventStore
                 .Select(e => JObject.Parse(e))
                 .ToList();
 
-            var eventClasses = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => typeof(Event).IsAssignableFrom(type))
-                .ToArray();
-
             var parsedEvents = partiallyParsedEvents
-                .Select(e => new { e, @class = eventClasses.Single(c => c.Name == e["Name"].ToString()) })
-                .Select(c => (Event)c.e.ToObject(c.@class))
+                .Select(e => e.TransformAndMaterialize())
                 .ToList();
 
             return parsedEvents;
