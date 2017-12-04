@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EventStore
 {
@@ -11,20 +12,21 @@ namespace EventStore
         Dictionary<Guid, string> events = new Dictionary<Guid, string>();
         private Dictionary<Type, dynamic> indexes = new Dictionary<Type, dynamic>();
 
-        public Event Save(Event @event)
+        public Task<Event> Save(Event @event)
         {
             var storedEvent = @event.Copy();
             storedEvent.Id = Guid.NewGuid();
             events.Add(storedEvent.Id, JsonConvert.SerializeObject(storedEvent));
-            return storedEvent;
+            return Task.FromResult(storedEvent);
         }
 
-        public T Get<T>(Guid id) where T : Event
+        public Task<T> Get<T>(Guid id) where T : Event
         {
-            return JsonConvert.DeserializeObject<T>(events[id]);
+            T deserializedObject = JsonConvert.DeserializeObject<T>(events[id]);
+            return Task.FromResult(deserializedObject);
         }
 
-        public IEnumerable<Event> Get(IEnumerable<Guid> ids)
+        public Task<IEnumerable<Event>> Get(IEnumerable<Guid> ids)
         {
             var serializedEvents = events
                 .Where(e => ids.Contains(e.Key))
@@ -33,14 +35,14 @@ namespace EventStore
                 .Select(e => JObject.Parse(e))
                 .ToList();
 
-            var parsedEvents = partiallyParsedEvents
+            IEnumerable<Event> parsedEvents = partiallyParsedEvents
                 .Select(e => e.TransformAndMaterialize())
                 .ToList();
 
-            return parsedEvents;
+            return Task.FromResult(parsedEvents);
         }
 
-        public void Index<T>(Event @event)
+        public Task Index<T>(Event @event)
         {
             var indexType = typeof(T);
             if (!indexes.ContainsKey(indexType))
@@ -50,9 +52,10 @@ namespace EventStore
             }
             var index = indexes[indexType];
             index.Add(@event);
+            return Task.CompletedTask;
         }
 
-        public IEnumerable<Event> GetByIndex<T>(T key)
+        public Task<IEnumerable<Event>> GetByIndex<T>(T key)
         {
             var indexType = typeof(T);
             var index = indexes[indexType];
@@ -60,7 +63,7 @@ namespace EventStore
             return Get(eventIds);
         }
 
-        public IEnumerable<Event> GetByIndexKeys<T>(IEnumerable<T> keys)
+        public Task<IEnumerable<Event>> GetByIndexKeys<T>(IEnumerable<T> keys)
         {
             var indexType = typeof(T);
             var index = indexes[indexType];

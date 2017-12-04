@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EventStoreSpecs
 {
@@ -13,45 +14,45 @@ namespace EventStoreSpecs
         public class SaveSpecs
         {
             [TestMethod]
-            public void ShouldSaveEvents()
+            public async Task ShouldSaveEventsAsync()
             {
                 var eventStore = new MemoryEventStore();
                 var eventToBeSaved = new TestEvent { Property1 = "test" };
 
-                var storedEvent = eventStore.Save(eventToBeSaved);
+                var storedEvent = await eventStore.Save(eventToBeSaved);
                 Assert.IsNotNull(storedEvent);
             }
 
             [TestMethod]
-            public void ShouldPopulateTheIdField()
+            public async Task ShouldPopulateTheIdFieldAsync()
             {
                 var eventStore = new MemoryEventStore();
                 var eventToBeSaved = new TestEvent { Property1 = "test" };
 
-                var storedEvent = eventStore.Save(eventToBeSaved);
+                var storedEvent = await eventStore.Save(eventToBeSaved);
 
                 Assert.AreNotEqual(Guid.Empty, storedEvent.Id);
             }
 
             [TestMethod]
-            public void ShouldReturnNewEventInstance()
+            public async Task ShouldReturnNewEventInstanceAsync()
             {
                 var eventStore = new MemoryEventStore();
                 var eventToBeSaved = new TestEvent { Property1 = "test" };
 
-                var storedEvent = eventStore.Save(eventToBeSaved);
+                var storedEvent = await eventStore.Save(eventToBeSaved);
 
                 Assert.AreNotSame(eventToBeSaved, storedEvent);
             }
 
             [TestMethod]
-            public void ShouldNotAffectOriginalInstanceDuringSave()
+            public async Task ShouldNotAffectOriginalInstanceDuringSaveAsync()
             {
                 var eventStore = new MemoryEventStore();
                 var eventToBeSaved = new TestEvent { Property1 = "test" };
                 var originalEventSerialized = JsonConvert.SerializeObject(eventToBeSaved);
 
-                var storedEvent = eventStore.Save(eventToBeSaved);
+                var storedEvent = await eventStore.Save(eventToBeSaved);
 
                 Assert.AreEqual(originalEventSerialized, JsonConvert.SerializeObject(eventToBeSaved));
             }
@@ -61,13 +62,13 @@ namespace EventStoreSpecs
         public class GenericBasedGetByIdSpecs
         {
             [TestMethod]
-            public void ShouldGetById()
+            public async Task ShouldGetByIdAsync()
             {
                 var eventStore = new MemoryEventStore();
                 var eventToBeSaved = new TestEvent { Property1 = "test" };
 
-                var storedEvent = eventStore.Save(eventToBeSaved);
-                var retreivedEvent = eventStore.Get<TestEvent>(storedEvent.Id);
+                var storedEvent = await eventStore.Save(eventToBeSaved);
+                var retreivedEvent = await eventStore.Get<TestEvent>(storedEvent.Id);
 
                 Assert.AreEqual(JsonConvert.SerializeObject(storedEvent), JsonConvert.SerializeObject(retreivedEvent));
             }
@@ -77,17 +78,17 @@ namespace EventStoreSpecs
         public class GetByMultipleIdsSpecs
         {
             [TestMethod]
-            public void ShouldGetByIds()
+            public async Task ShouldGetByIdsAsync()
             {
                 var eventStore = new MemoryEventStore();
                 var eventToBeSaved1 = new TestEvent { Property1 = "test" };
                 var eventToBeSaved2 = new TestEvent2 { Property1 = "property1", Property2 = "property2" };
 
-                var storedEvent1 = eventStore.Save(eventToBeSaved1);
-                var storedEvent2 = eventStore.Save(eventToBeSaved2);
+                var storedEvent1 = await eventStore.Save(eventToBeSaved1);
+                var storedEvent2 = await eventStore.Save(eventToBeSaved2);
 
                 var expectedEvents = new List<Event> { storedEvent1, storedEvent2 };
-                var retreivedEvents = eventStore.Get(new List<Guid> { storedEvent1.Id, storedEvent2.Id });
+                var retreivedEvents = await eventStore.Get(new List<Guid> { storedEvent1.Id, storedEvent2.Id });
 
                 Assert.AreEqual(JsonConvert.SerializeObject(expectedEvents), JsonConvert.SerializeObject(retreivedEvents));
             }
@@ -97,12 +98,12 @@ namespace EventStoreSpecs
         public class IndexSpecs
         {
             [TestMethod]
-            public void ShouldInxedEvent()
+            public async Task ShouldInxedEventAsync()
             {
                 var savedEvent = new TestEvent { Property1 = "test", Id = new Guid() };
                 var eventStore = new MemoryEventStore();
 
-                eventStore.Index<TestEventIndexKey>(savedEvent);
+                await eventStore.Index<TestEventIndexKey>(savedEvent);
             }
         }
 
@@ -110,19 +111,19 @@ namespace EventStoreSpecs
         public class GetByIndexSingleKey
         {
             [TestMethod]
-            public void ShouldRetrieveEventFromIndex()
+            public async Task ShouldRetrieveEventFromIndexAsync()
             {
                 var unsavedEvent1 = new TestEvent { Property1 = "test" };
                 var unsavedEvent2 = new TestEvent2 { Property1 = "test", Property2 ="test2"};
                 var eventStore = new MemoryEventStore();
 
-                var savedEvent1 = eventStore.Save(unsavedEvent1);
-                var savedEvent2 = eventStore.Save(unsavedEvent2);
+                var savedEvent1 = await eventStore.Save(unsavedEvent1);
+                var savedEvent2 = await eventStore.Save(unsavedEvent2);
 
-                eventStore.Index<TestEventIndexKey>(savedEvent1);
-                eventStore.Index<TestEventIndexKey>(savedEvent2);
+                await eventStore.Index<TestEventIndexKey>(savedEvent1);
+                await eventStore.Index<TestEventIndexKey>(savedEvent2);
 
-                var indexedEvents = eventStore.GetByIndex(new TestEventIndexKey { Property1 = "test" });
+                var indexedEvents = await eventStore.GetByIndex(new TestEventIndexKey { Property1 = "test" });
                 Assert.AreEqual(2, indexedEvents.Count());
             }
         }
@@ -131,19 +132,19 @@ namespace EventStoreSpecs
         public class GetByIndexMultipleKeys
         {
             [TestMethod]
-            public void ShouldRetrieveEventsFromIndex()
+            public async Task ShouldRetrieveEventsFromIndexAsync()
             {
                 var unsavedEvent1 = new TestEvent { Property1 = "test" };
                 var unsavedEvent2 = new TestEvent2 { Property1 = "test2", Property2 = "test2" };
                 var eventStore = new MemoryEventStore();
 
-                var savedEvent1 = eventStore.Save(unsavedEvent1);
-                var savedEvent2 = eventStore.Save(unsavedEvent2);
+                var savedEvent1 = await eventStore.Save(unsavedEvent1);
+                var savedEvent2 = await eventStore.Save(unsavedEvent2);
 
-                eventStore.Index<TestEventIndexKey>(savedEvent1);
-                eventStore.Index<TestEventIndexKey>(savedEvent2);
+                await eventStore.Index<TestEventIndexKey>(savedEvent1);
+                await eventStore.Index<TestEventIndexKey>(savedEvent2);
 
-                var indexedEvents = eventStore.GetByIndexKeys(new List<TestEventIndexKey> {
+                var indexedEvents = await eventStore.GetByIndexKeys(new List<TestEventIndexKey> {
                     new TestEventIndexKey{Property1="test"},
                     new TestEventIndexKey{Property1="test2"}
                 });
