@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EventVersioningSpecs
 {
@@ -11,19 +12,19 @@ namespace EventVersioningSpecs
     public class EventVersioningSpecs
     {
         [TestMethod]
-        public void ShouldMapOlderEventFormatsToNewEventTypes()
+        public async Task ShouldMapOlderEventFormatsToNewEventTypesAsync()
         {
             var eventWithVersion1 = new VersionedEvent1 { Property1 = "property1" };
             var eventWithVersion2 = new VersionedEvent2 { Property1 = "property1", Property2 = "property2" };
             var eventWithVersion3 = new VersionedEvent { Property3 = "test" };
 
             var eventStore = new MemoryEventStore();
-            var savedEvent1 = eventStore.Save(eventWithVersion1);
-            var savedEvent2 = eventStore.Save(eventWithVersion2);
-            var savedEvent3 = eventStore.Save(eventWithVersion3);
+            var savedEvent1 = await eventStore.Save(eventWithVersion1);
+            var savedEvent2 = await eventStore.Save(eventWithVersion2);
+            var savedEvent3 = await eventStore.Save(eventWithVersion3);
 
             var ids = new List<Guid> { savedEvent1.Id, savedEvent2.Id, savedEvent3.Id };
-            var events = eventStore.Get(ids);
+            var events = await eventStore.Get(ids);
             var eventTypeCount = events
                 .Select(e => e.GetType())
                 .Where(e => e.Name == "VersionedEvent")
