@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace EventStore
 {
@@ -31,9 +29,8 @@ namespace EventStore
                 if (!pipelines.ContainsKey(eventType))
                 {
                     pipelines.Add(eventType, new List<Pipeline>());
-
-                    pipelines[eventType].Add(pipeline);
                 }
+                pipelines[eventType].Add(pipeline);
             }
         }
 
@@ -48,24 +45,5 @@ namespace EventStore
                 }
             }
         }
-    }
-
-    class Pipeline
-    {
-        public IEnumerable<Type> HandledEventTypes;
-        public IEnumerable<Act> Acts;
-
-        internal void FireEvent(Event @event)
-        {
-            foreach (var act in Acts)
-            {
-                act(@event, new PipelineContext());
-            }
-        }
-    }
-
-    public class PipelineContext
-    {
-
     }
 }

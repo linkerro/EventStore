@@ -23,11 +23,11 @@ namespace EventStoreSpecs
         [TestMethod]
         public void DispatcherShouldRegisterPipeline()
         {
-            IEnumerable<Type> eventTypes = new List<Type>
+            var eventTypes = new List<Type>
             {
                 typeof(Event1)
             };
-            IEnumerable<Act> actions = new List<Act> { nopAct };
+            var actions = new List<Act> { nopAct };
             Action action = () => dispatcher.RegisterPipeline(eventTypes, actions);
             action.ShouldNotThrow();
         }
@@ -36,8 +36,8 @@ namespace EventStoreSpecs
         public void DispatcherShouldDispatchEventToPipeline()
         {
             var actWrapper = ActWrapper.From(nopAct);
-            IEnumerable<Act> actions = new List<Act> { actWrapper.Act };
-            IEnumerable<Type> eventTypes = new List<Type>
+            var actions = new List<Act> { actWrapper.Act };
+            var eventTypes = new List<Type>
             {
                 typeof(Event1)
             };
@@ -46,9 +46,48 @@ namespace EventStoreSpecs
             actWrapper.HasBeenCalled.Should().BeTrue();
         }
 
+        [TestMethod]
+        public void DispatcherShouldRegisterMultiplePipelinesPerEvent()
+        {
+            var actWrapperForPipe1 = ActWrapper.From(nopAct);
+            var actWrapperForPipe2 = ActWrapper.From(nopAct);
+
+            var eventTypes = new List<Type> { typeof(Event1) };
+            var actsForPipe1 = new List<Act> { actWrapperForPipe1.Act };
+            var actsForPipe2 = new List<Act> { actWrapperForPipe2.Act };
+            dispatcher.RegisterPipeline(eventTypes, actsForPipe1);
+            dispatcher.RegisterPipeline(eventTypes, actsForPipe2);
+
+            dispatcher.Dispatch(new Event1());
+            actWrapperForPipe1.HasBeenCalled.Should().BeTrue();
+            actWrapperForPipe2.HasBeenCalled.Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void DispatcherShouldRegisterPipelineForMultipleEvents()
+        {
+            var actWrapper = ActWrapper.From(nopAct);
+
+            var eventTypes = new List<Type> { typeof(Event1),typeof(Event2) };
+            var acts = new List<Act> { actWrapper.Act };
+            dispatcher.RegisterPipeline(eventTypes, acts);
+
+            Event1 event1 = new Event1();
+            dispatcher.Dispatch(event1);
+            actWrapper.Event.ShouldBeEquivalentTo(event1);
+            Event2 event2 = new Event2();
+            dispatcher.Dispatch(event2);
+            actWrapper.Event.ShouldBeEquivalentTo(event2);
+        }
+
         class Event1 : Event
         {
             
+        }
+
+        class Event2 : Event
+        {
+
         }
     }
 }
