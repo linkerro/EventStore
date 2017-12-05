@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EventStore
 {
-    public class MemoryEventStore
+    public class MemoryEventStore : IEventStore
     {
         Dictionary<Guid, string> events = new Dictionary<Guid, string>();
         private Dictionary<Type, dynamic> indexes = new Dictionary<Type, dynamic>();
