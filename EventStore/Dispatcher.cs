@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EventStore
 {
@@ -34,14 +35,15 @@ namespace EventStore
             }
         }
 
-        public void Dispatch(Event @event)
+        public async Task Dispatch(Event @event)
         {
+            var savedEvent = await eventStore.Save(@event);
             var eventType = @event.GetType();
             if (pipelines.ContainsKey(eventType))
             {
                 foreach (var pipeline in pipelines[eventType])
                 {
-                    pipeline.FireEvent(@event);
+                    pipeline.FireEvent(savedEvent);
                 }
             }
         }
