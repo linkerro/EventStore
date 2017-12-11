@@ -3,16 +3,18 @@ using System.Collections.Generic;
 
 namespace EventStore
 {
-    class Pipeline
+    public class Pipeline
     {
         public IEnumerable<Type> HandledEventTypes;
         public IEnumerable<Act> Acts;
+        public IDispatcher dispatcher;
 
-        internal void FireEvent(Event @event)
+        public void FireEvent(Event @event)
         {
             foreach (var act in Acts)
             {
-                act(@event, new PipelineContext());
+                var context = new PipelineContext { Dispathcer = dispatcher };
+                act(@event, context);
             }
         }
     }

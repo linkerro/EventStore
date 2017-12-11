@@ -6,7 +6,7 @@ namespace EventStore
 {
     public delegate void Act(Event @event, PipelineContext context);
 
-    public class Dispatcher
+    public class Dispatcher : IDispatcher
     {
 
         private IEventStore eventStore;
@@ -22,7 +22,8 @@ namespace EventStore
             var pipeline = new Pipeline
             {
                 HandledEventTypes = handledEventTypes,
-                Acts = acts
+                Acts = acts,
+                dispatcher = this
             };
 
             foreach (var eventType in handledEventTypes)
