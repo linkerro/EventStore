@@ -11,6 +11,7 @@ namespace EventStoreSpecs
     public partial class DispatcherSpecs
     {
         private MemoryEventStore eventStore;
+        private ReconciliationService reconciliationService;
         private Dispatcher dispatcher;
         private Act nopAct = (e, context) => { };
 
@@ -18,8 +19,9 @@ namespace EventStoreSpecs
         public void TestInitialization()
         {
             eventStore = new MemoryEventStore();
+            reconciliationService = new ReconciliationService();
 
-            dispatcher = new Dispatcher(eventStore, null);
+            dispatcher = new Dispatcher(eventStore, reconciliationService);
         }
 
         [TestMethod]
@@ -106,6 +108,26 @@ namespace EventStoreSpecs
             savedEvent.Should().NotBeNull();
         }
 
+        [TestMethod]
+        public async Task DispatcherShoulDispatchWithReconciliation()
+        {
+            var resolvedEvent = new ReconciliationEvent { Id = Guid.NewGuid() };
+            var actWrapper = ActWrapper
+                .From((e, context) =>
+                {
+                    resolvedEvent.ReconciliationId = (e as ReconciliationEvent).ReconciliationId;
+                    context.ReconciliationService.ResolveTask(resolvedEvent);
+                });
+
+            var eventTypes = new List<Type> { typeof(TestReconciliationEvent) };
+            var acts = new List<Act> { actWrapper.Act };
+            dispatcher.RegisterPipeline(eventTypes, acts);
+
+            var originalEvent = new TestReconciliationEvent();
+            var reconciliationEvent = await dispatcher.DispatchWithReconciliation(originalEvent);
+            reconciliationEvent.ShouldBeEquivalentTo(resolvedEvent);
+        }
+
         class Event1 : Event
         {
             public string Property { get; set; }
@@ -114,6 +136,11 @@ namespace EventStoreSpecs
         class Event2 : Event
         {
             public string Property { get; set; }
+        }
+
+        class TestReconciliationEvent : ReconciliationEvent
+        {
+
         }
     }
 }

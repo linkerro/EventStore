@@ -8,5 +8,6 @@ namespace EventStore
     {
         void Dispatch(Event @event);
         void RegisterPipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Act> acts);
+        Task<Event> DispatchWithReconciliation(ReconciliationEvent reconciliationEvent);
     }
 }

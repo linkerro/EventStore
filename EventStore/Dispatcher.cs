@@ -45,5 +45,14 @@ namespace EventStore
                 }
             }
         }
+
+        public Task<Event> DispatchWithReconciliation(ReconciliationEvent reconciliationEvent)
+        {
+            var reconciliationId = Guid.NewGuid();
+            reconciliationEvent.ReconciliationId = reconciliationId;
+            var reconciliationTask = reconciliationService.GetReconciliationTask(reconciliationId);
+            Dispatch(reconciliationEvent);
+            return reconciliationTask;
+        }
     }
 }
