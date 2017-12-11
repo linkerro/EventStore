@@ -19,7 +19,7 @@ namespace EventStoreSpecs
         {
             eventStore = new MemoryEventStore();
 
-            dispatcher = new Dispatcher(eventStore);
+            dispatcher = new Dispatcher(eventStore, null);
         }
 
         [TestMethod]
@@ -44,7 +44,8 @@ namespace EventStoreSpecs
                 typeof(Event1)
             };
             dispatcher.RegisterPipeline(eventTypes, actions);
-            await dispatcher.Dispatch(new Event1());
+            dispatcher.Dispatch(new Event1());
+            await actWrapper.ActTask;
             actWrapper.HasBeenCalled.Should().BeTrue();
         }
 
@@ -60,7 +61,9 @@ namespace EventStoreSpecs
             dispatcher.RegisterPipeline(eventTypes, actsForPipe1);
             dispatcher.RegisterPipeline(eventTypes, actsForPipe2);
 
-            await dispatcher.Dispatch(new Event1());
+            dispatcher.Dispatch(new Event1());
+            await Task.WhenAll(new Task[] { actWrapperForPipe1.ActTask, actWrapperForPipe2.ActTask });
+
             actWrapperForPipe1.HasBeenCalled.Should().BeTrue();
             actWrapperForPipe2.HasBeenCalled.Should().BeTrue();
         }
@@ -70,15 +73,19 @@ namespace EventStoreSpecs
         {
             var actWrapper = ActWrapper.From(nopAct);
 
-            var eventTypes = new List<Type> { typeof(Event1),typeof(Event2) };
+            var eventTypes = new List<Type> { typeof(Event1), typeof(Event2) };
             var acts = new List<Act> { actWrapper.Act };
             dispatcher.RegisterPipeline(eventTypes, acts);
 
             Event1 event1 = new Event1 { Property = "event1" };
-            await dispatcher.Dispatch(event1);
+            dispatcher.Dispatch(event1);
+            await actWrapper.ActTask;
+
             (actWrapper.Event as Event1).Property.ShouldBeEquivalentTo(event1.Property);
             Event2 event2 = new Event2 { Property = "event2" };
-            await dispatcher.Dispatch(event2);
+            dispatcher.Dispatch(event2);
+            await actWrapper.ActTask;
+
             (actWrapper.Event as Event2).Property.ShouldBeEquivalentTo(event2.Property);
         }
 
@@ -92,7 +99,8 @@ namespace EventStoreSpecs
             dispatcher.RegisterPipeline(eventTypes, acts);
 
             var originalEvent = new Event1();
-            await dispatcher.Dispatch(originalEvent);
+            dispatcher.Dispatch(originalEvent);
+            await actWrapper.ActTask;
 
             var savedEvent = await eventStore.Get<Event1>(actWrapper.Event.Id);
             savedEvent.Should().NotBeNull();

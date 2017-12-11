@@ -2,7 +2,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Moq;
 using static EventStoreSpecs.DispatcherSpecs;
 using FluentAssertions;
@@ -14,21 +13,27 @@ namespace EventStoreSpecs
     {
         private Act nopAct = (e, context) => { };
         private Mock<IDispatcher> dispatcherMock;
+        private Mock<IReconciliationService> reconciliationServiceMock;
+        private ActWrapper actWrapper;
+        private Pipeline pipeline;
 
         [TestInitialize]
         public void Initialize()
         {
             dispatcherMock = new Mock<IDispatcher>(MockBehavior.Strict);
+            reconciliationServiceMock = new Mock<IReconciliationService>(MockBehavior.Strict);
+            actWrapper = ActWrapper.From(nopAct);
+            pipeline = new Pipeline(
+                new List<Type> { typeof(Event) },
+                new List<Act> { actWrapper.Act },
+                dispatcherMock.Object,
+                reconciliationServiceMock.Object
+                );
         }
 
         [TestMethod]
         public void Pipeline_ShouldFireEvents()
         {
-            var pipeline = new Pipeline();
-            var actWrapper = ActWrapper.From(nopAct);
-            pipeline.Acts = new List<Act> { actWrapper.Act };
-            pipeline.dispatcher = dispatcherMock.Object;
-            pipeline.HandledEventTypes = new List<Type> { typeof(Event) };
             var @event = new Event();
             pipeline.FireEvent(@event);
             actWrapper.HasBeenCalled.Should().BeTrue();
@@ -37,15 +42,19 @@ namespace EventStoreSpecs
         [TestMethod]
         public void Pipeline_ShouldPopulateTheContextWithTheDispatcher()
         {
-            var pipeline = new Pipeline();
-            var actWrapper = ActWrapper.From(nopAct);
-            pipeline.Acts = new List<Act> { actWrapper.Act };
-            pipeline.dispatcher = dispatcherMock.Object;
-            pipeline.HandledEventTypes = new List<Type> { typeof(Event) };
             var @event = new Event();
             pipeline.FireEvent(@event);
 
             actWrapper.PipelineContext.Dispathcer.ShouldBeEquivalentTo(dispatcherMock.Object);
+        }
+
+        [TestMethod]
+        public void Pipeline_ShouldPopulateTheReconciliationServiceField()
+        {
+            var @event = new Event();
+            pipeline.FireEvent(@event);
+
+            actWrapper.PipelineContext.ReconciliationService.ShouldBeEquivalentTo(reconciliationServiceMock.Object);
         }
     }
 }

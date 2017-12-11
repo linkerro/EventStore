@@ -5,15 +5,28 @@ namespace EventStore
 {
     public class Pipeline
     {
-        public IEnumerable<Type> HandledEventTypes;
-        public IEnumerable<Act> Acts;
-        public IDispatcher dispatcher;
+        private IEnumerable<Type> handledEventTypes;
+        private IEnumerable<Act> acts;
+        private IDispatcher dispatcher;
+        private IReconciliationService reconciliationService;
+
+        public Pipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Act> acts, IDispatcher dispatcher, IReconciliationService reconciliationService)
+        {
+            this.handledEventTypes = handledEventTypes;
+            this.acts = acts;
+            this.dispatcher = dispatcher;
+            this.reconciliationService = reconciliationService;
+        }
 
         public void FireEvent(Event @event)
         {
-            foreach (var act in Acts)
+            foreach (var act in acts)
             {
-                var context = new PipelineContext { Dispathcer = dispatcher };
+                var context = new PipelineContext
+                {
+                    Dispathcer = dispatcher,
+                    ReconciliationService = reconciliationService
+                };
                 act(@event, context);
             }
         }

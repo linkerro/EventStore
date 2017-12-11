@@ -6,7 +6,7 @@ namespace EventStore
 {
     public interface IDispatcher
     {
-        Task Dispatch(Event @event);
+        void Dispatch(Event @event);
         void RegisterPipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Act> acts);
     }
 }

@@ -10,21 +10,18 @@ namespace EventStore
     {
 
         private IEventStore eventStore;
+        private IReconciliationService reconciliationService;
         private Dictionary<Type, List<Pipeline>> pipelines = new Dictionary<Type, List<Pipeline>>();
 
-        public Dispatcher(IEventStore eventStore)
+        public Dispatcher(IEventStore eventStore, IReconciliationService reconciliationService)
         {
             this.eventStore = eventStore;
+            this.reconciliationService = reconciliationService;
         }
 
         public void RegisterPipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Act> acts)
         {
-            var pipeline = new Pipeline
-            {
-                HandledEventTypes = handledEventTypes,
-                Acts = acts,
-                dispatcher = this
-            };
+            var pipeline = new Pipeline(handledEventTypes, acts, this, reconciliationService);
 
             foreach (var eventType in handledEventTypes)
             {
@@ -36,7 +33,7 @@ namespace EventStore
             }
         }
 
-        public async Task Dispatch(Event @event)
+        public async void Dispatch(Event @event)
         {
             var savedEvent = await eventStore.Save(@event);
             var eventType = @event.GetType();
