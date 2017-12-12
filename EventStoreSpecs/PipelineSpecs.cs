@@ -14,6 +14,7 @@ namespace EventStoreSpecs
         private Act nopAct = (e, context) => { };
         private Mock<IDispatcher> dispatcherMock;
         private Mock<IReconciliationService> reconciliationServiceMock;
+        private Mock<IEventStore> eventStoreMock;
         private ActWrapper actWrapper;
         private Pipeline pipeline;
 
@@ -22,12 +23,14 @@ namespace EventStoreSpecs
         {
             dispatcherMock = new Mock<IDispatcher>(MockBehavior.Strict);
             reconciliationServiceMock = new Mock<IReconciliationService>(MockBehavior.Strict);
+            eventStoreMock = new Mock<IEventStore>(MockBehavior.Strict);
             actWrapper = ActWrapper.From(nopAct);
             pipeline = new Pipeline(
                 new List<Type> { typeof(Event) },
                 new List<Act> { actWrapper.Act },
                 dispatcherMock.Object,
-                reconciliationServiceMock.Object
+                reconciliationServiceMock.Object,
+                eventStoreMock.Object
                 );
         }
 
@@ -55,6 +58,15 @@ namespace EventStoreSpecs
             pipeline.FireEvent(@event);
 
             actWrapper.PipelineContext.ReconciliationService.ShouldBeEquivalentTo(reconciliationServiceMock.Object);
+        }
+
+        [TestMethod]
+        public void Pipeline_ShouldPopulateTheContextWithTheEventStoreField()
+        {
+            var @event = new Event();
+            pipeline.FireEvent(@event);
+
+            actWrapper.PipelineContext.EventStore.ShouldBeEquivalentTo(eventStoreMock.Object);
         }
     }
 }

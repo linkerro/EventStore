@@ -21,7 +21,7 @@ namespace EventStore
 
         public void RegisterPipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Act> acts)
         {
-            var pipeline = new Pipeline(handledEventTypes, acts, this, reconciliationService);
+            var pipeline = new Pipeline(handledEventTypes, acts, this, reconciliationService, eventStore);
 
             foreach (var eventType in handledEventTypes)
             {
