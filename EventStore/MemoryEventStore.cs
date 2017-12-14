@@ -10,7 +10,7 @@ namespace EventStore
     public class MemoryEventStore : IEventStore
     {
         Dictionary<Guid, string> events = new Dictionary<Guid, string>();
-        private Dictionary<Type, dynamic> indexes = new Dictionary<Type, dynamic>();
+        private Dictionary<string, dynamic> indexes = new Dictionary<string, dynamic>();
 
         public Task<Event> Save(Event @event)
         {
@@ -42,33 +42,34 @@ namespace EventStore
             return Task.FromResult(parsedEvents);
         }
 
-        public Task Index<T>(Event @event)
+        public Task Index(Event @event, string indexName, object indexKey)
         {
-            var indexType = typeof(T);
-            if (!indexes.ContainsKey(indexType))
+            var indexKeyType = indexKey.GetType();
+            var indexTypeInfo = typeof(Index<>).MakeGenericType(indexKeyType);
+
+            if (!indexes.ContainsKey(indexName))
             {
-                var newIndexTypeInfo = typeof(Index<>).MakeGenericType(indexType);
-                indexes.Add(indexType, Activator.CreateInstance(newIndexTypeInfo));
+                indexes.Add(indexName, Activator.CreateInstance(indexTypeInfo));
             }
-            var index = indexes[indexType];
-            index.Add(@event);
+            dynamic index = indexes[indexName];
+            indexTypeInfo.GetMethod(nameof(Index<object>.Add)).Invoke(index, new object[] { @event });
             return Task.CompletedTask;
         }
 
-        public Task<IEnumerable<Event>> GetByIndex<T>(T key)
+        public Task<IEnumerable<Event>> GetByIndex(string indexName)
         {
-            var indexType = typeof(T);
-            var index = indexes[indexType];
-            IEnumerable<Guid> eventIds = index.GetByKey(key);
-            return Get(eventIds);
+            var indexType = (Type)indexes[indexName].GetType();
+            var getAllName = nameof(Index<object>.GetAll);
+            var ids = (IEnumerable<Guid>)indexType.GetMethod(getAllName).Invoke(indexes[indexName], null);
+            return Get(ids);
         }
 
-        public Task<IEnumerable<Event>> GetByIndexKeys<T>(IEnumerable<T> keys)
+        public Task<IEnumerable<Event>> GetFromIndex(string indexName, object lookupTerm)
         {
-            var indexType = typeof(T);
-            var index = indexes[indexType];
-            IEnumerable<Guid> eventIds = keys.SelectMany<T, Guid>(k => index.GetByKey(k));
-            return Get(eventIds);
+            var indexType = (Type)indexes[indexName].GetType();
+            var getByMatcherName = nameof(Index<object>.GetByMatcher);
+            var ids = (IEnumerable<Guid>)indexType.GetMethod(getByMatcherName).Invoke(indexes[indexName], new object[] { lookupTerm });
+            return Get(ids);
         }
     }
 }

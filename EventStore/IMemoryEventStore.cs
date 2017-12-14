@@ -8,9 +8,9 @@ namespace EventStore
     {
         Task<IEnumerable<Event>> Get(IEnumerable<Guid> ids);
         Task<T> Get<T>(Guid id) where T : Event;
-        Task<IEnumerable<Event>> GetByIndex<T>(T key);
-        Task<IEnumerable<Event>> GetByIndexKeys<T>(IEnumerable<T> keys);
-        Task Index<T>(Event @event);
+        Task Index(Event @event, string indexName, object indexKey);
+        Task<IEnumerable<Event>> GetByIndex(string indexName);
+        Task<IEnumerable<Event>> GetFromIndex(string indexName, object lookupTerm);
         Task<Event> Save(Event @event);
     }
 }

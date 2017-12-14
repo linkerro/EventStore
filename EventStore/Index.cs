@@ -1,30 +1,51 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace EventStore
 {
-    public class Index<T> where T : struct
+    public class Index<T>
     {
-        Type type;
-        Dictionary<T, List<Guid>> index = new Dictionary<T, List<Guid>>();
+        Dictionary<T, List<Guid>> dictionary = new Dictionary<T, List<Guid>>();
 
         public void Add(Event @event)
         {
             var key = JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(@event));
-            if (!index.ContainsKey(key))
+            if (!dictionary.ContainsKey(key))
             {
-                index.Add(key, new List<Guid>());
+                dictionary.Add(key, new List<Guid>());
             }
-            index[key].Add(@event.Id);
+            dictionary[key].Add(@event.Id);
         }
 
         public IEnumerable<Guid> GetByKey(T key)
         {
-            return index
-                .SingleOrDefault(i => i.Key.Equals(key))
-                .Value;
+            if (dictionary.ContainsKey(key))
+            {
+                return dictionary[key];
+            }
+            return new Guid[0];
+        }
+
+        public IEnumerable<Guid> GetByMatcher(object lookupTerm)
+        {
+            var lookupType = lookupTerm.GetType();
+            var serializedLookupTerm = JsonConvert.SerializeObject(lookupTerm);
+            var results = dictionary.Where(keyValuePair =>
+            {
+                var keyMatcher = JsonConvert.SerializeObject(JsonConvert.DeserializeObject(JsonConvert.SerializeObject(keyValuePair.Key), lookupType));
+                return keyMatcher == serializedLookupTerm;
+            })
+            .SelectMany(keyValuePair => keyValuePair.Value)
+            .ToArray();
+            return results;
+        }
+
+        public IEnumerable<Guid> GetAll()
+        {
+            return dictionary.SelectMany(d => d.Value).ToArray();
         }
     }
 }

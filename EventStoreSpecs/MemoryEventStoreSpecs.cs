@@ -1,4 +1,5 @@
 using EventStore;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System;
@@ -98,56 +99,58 @@ namespace EventStoreSpecs
         public class IndexSpecs
         {
             [TestMethod]
-            public async Task ShouldInxedEventAsync()
+            public void ShouldInxedEventAsync()
             {
                 var savedEvent = new TestEvent { Property1 = "test", Id = new Guid() };
                 var eventStore = new MemoryEventStore();
 
-                await eventStore.Index<TestEventIndexKey>(savedEvent);
+                Action action = async () => await eventStore.Index(savedEvent, "testIndex", new { Property1 = "" });
+                action.ShouldNotThrow();
             }
         }
 
         [TestClass]
-        public class GetByIndexSingleKey
+        public class GetByIndex
         {
             [TestMethod]
             public async Task ShouldRetrieveEventFromIndexAsync()
             {
                 var unsavedEvent1 = new TestEvent { Property1 = "test" };
-                var unsavedEvent2 = new TestEvent2 { Property1 = "test", Property2 ="test2"};
+                var unsavedEvent2 = new TestEvent2 { Property1 = "test", Property2 = "test2" };
                 var eventStore = new MemoryEventStore();
 
                 var savedEvent1 = await eventStore.Save(unsavedEvent1);
                 var savedEvent2 = await eventStore.Save(unsavedEvent2);
 
-                await eventStore.Index<TestEventIndexKey>(savedEvent1);
-                await eventStore.Index<TestEventIndexKey>(savedEvent2);
+                object indexKey = new { Property1 = "" };
+                var indexName = "indexName";
+                await eventStore.Index(savedEvent1, indexName, indexKey);
+                await eventStore.Index(savedEvent2, indexName, indexKey);
 
-                var indexedEvents = await eventStore.GetByIndex(new TestEventIndexKey { Property1 = "test" });
+                var indexedEvents = await eventStore.GetByIndex(indexName);
                 Assert.AreEqual(2, indexedEvents.Count());
             }
         }
 
         [TestClass]
-        public class GetByIndexMultipleKeys
+        public class GetFromIndex
         {
             [TestMethod]
-            public async Task ShouldRetrieveEventsFromIndexAsync()
+            public async Task ShouldRetrieveEventFromIndexAsync()
             {
                 var unsavedEvent1 = new TestEvent { Property1 = "test" };
-                var unsavedEvent2 = new TestEvent2 { Property1 = "test2", Property2 = "test2" };
+                var unsavedEvent2 = new TestEvent2 { Property1 = "test", Property2 = "test2" };
                 var eventStore = new MemoryEventStore();
 
                 var savedEvent1 = await eventStore.Save(unsavedEvent1);
                 var savedEvent2 = await eventStore.Save(unsavedEvent2);
 
-                await eventStore.Index<TestEventIndexKey>(savedEvent1);
-                await eventStore.Index<TestEventIndexKey>(savedEvent2);
+                object indexKey = new { Property1 = "" };
+                var indexName = "indexName";
+                await eventStore.Index(savedEvent1, indexName, indexKey);
+                await eventStore.Index(savedEvent2, indexName, indexKey);
 
-                var indexedEvents = await eventStore.GetByIndexKeys(new List<TestEventIndexKey> {
-                    new TestEventIndexKey{Property1="test"},
-                    new TestEventIndexKey{Property1="test2"}
-                });
+                var indexedEvents = await eventStore.GetFromIndex(indexName,new { Property1 = "test" });
                 Assert.AreEqual(2, indexedEvents.Count());
             }
         }
