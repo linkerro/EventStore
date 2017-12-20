@@ -7,7 +7,7 @@ namespace EventStore
     public interface IDispatcher
     {
         void Dispatch(Event @event);
-        void RegisterPipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Act> acts);
+        void RegisterPipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Actor> actors);
         Task<Event> DispatchWithReconciliation(ReconciliationEvent reconciliationEvent);
     }
 }
