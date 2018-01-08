@@ -7,23 +7,23 @@ namespace EventStore
     public class Pipeline
     {
         private IEnumerable<Type> handledEventTypes;
-        private IEnumerable<Actor> actors;
+        private ActList acts;
         private IDispatcher dispatcher;
         private IReconciliationService reconciliationService;
         private IEventStore eventStore;
 
-        public Pipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Actor> actors, IDispatcher dispatcher, IReconciliationService reconciliationService, IEventStore eventStore)
+        public Pipeline(IEnumerable<Type> handledEventTypes, ActList acts, IDispatcher dispatcher, IReconciliationService reconciliationService, IEventStore eventStore)
         {
             this.handledEventTypes = handledEventTypes;
-            this.actors = actors;
+            this.acts = acts;
             this.dispatcher = dispatcher;
             this.reconciliationService = reconciliationService;
             this.eventStore = eventStore;
         }
 
-        public async void FireEvent(Event @event)
+        public async Task FireEvent(Event @event)
         {
-            foreach (var actor in actors)
+            foreach (var act in acts)
             {
                 var context = new PipelineContext
                 {
@@ -31,14 +31,7 @@ namespace EventStore
                     ReconciliationService = reconciliationService,
                     EventStore=eventStore
                 };
-                if (actor.IsAsync)
-                {
-                    await actor.ActAsync(@event, context);
-                }
-                else
-                {
-                    actor.Act(@event, context);
-                }
+                await act(@event, context);
             }
         }
     }

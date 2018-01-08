@@ -7,37 +7,6 @@ namespace EventStore
     public delegate void Act(Event @event, PipelineContext context);
     public delegate Task ActAsync(Event @event, PipelineContext context);
 
-    public class Actor
-    {
-        public Act Act { get; private set; }
-        public ActAsync ActAsync { get; private set; }
-        public bool IsAsync { get; private set; }
-
-        private Actor()
-        {
-
-        }
-
-        public static implicit operator Actor(ActAsync actAsync)
-        {
-            return new Actor
-            {
-                ActAsync = actAsync,
-                IsAsync = true
-            };
-        }
-
-        public static implicit operator Actor(Act act)
-        {
-            return new Actor
-            {
-                Act = act,
-                IsAsync = false
-            };
-        }
-
-    }
-
     public class Dispatcher : IDispatcher
     {
 
@@ -51,9 +20,9 @@ namespace EventStore
             this.reconciliationService = reconciliationService;
         }
 
-        public void RegisterPipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Actor> actors)
+        public void RegisterPipeline(IEnumerable<Type> handledEventTypes, ActList acts)
         {
-            var pipeline = new Pipeline(handledEventTypes, actors, this, reconciliationService, eventStore);
+            var pipeline = new Pipeline(handledEventTypes, acts, this, reconciliationService, eventStore);
 
             foreach (var eventType in handledEventTypes)
             {
@@ -73,7 +42,7 @@ namespace EventStore
             {
                 foreach (var pipeline in pipelines[eventType])
                 {
-                    pipeline.FireEvent(savedEvent);
+                    await pipeline.FireEvent(savedEvent);
                 }
             }
         }
@@ -85,6 +54,15 @@ namespace EventStore
             var reconciliationTask = reconciliationService.GetReconciliationTask(reconciliationId);
             Dispatch(reconciliationEvent);
             return reconciliationTask;
+        }
+    }
+
+    public class ActList : List<ActAsync>
+    {
+        public void Add(Act act)
+        {
+            ActAsync asyncAct = (e, context) => Task.Run(()=>act(e,context));
+            Add(asyncAct);
         }
     }
 }

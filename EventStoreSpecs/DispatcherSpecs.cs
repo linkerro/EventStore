@@ -31,7 +31,7 @@ namespace EventStoreSpecs
             {
                 typeof(Event1)
             };
-            var actions = new List<Actor> { nopAct };
+            var actions = new ActList { nopAct };
             Action action = () => dispatcher.RegisterPipeline(eventTypes, actions);
             action.ShouldNotThrow();
         }
@@ -40,7 +40,7 @@ namespace EventStoreSpecs
         public async Task DispatcherShouldDispatchEventToPipelineAsync()
         {
             var actWrapper = ActWrapper.From(nopAct);
-            var actions = new List<Actor> { actWrapper.Act };
+            var actions = new ActList { actWrapper.Act };
             var eventTypes = new List<Type>
             {
                 typeof(Event1)
@@ -58,8 +58,8 @@ namespace EventStoreSpecs
             var actWrapperForPipe2 = ActWrapper.From(nopAct);
 
             var eventTypes = new List<Type> { typeof(Event1) };
-            var actsForPipe1 = new List<Actor> { actWrapperForPipe1.Act };
-            var actsForPipe2 = new List<Actor> { actWrapperForPipe2.Act };
+            var actsForPipe1 = new ActList { actWrapperForPipe1.Act };
+            var actsForPipe2 = new ActList { actWrapperForPipe2.Act };
             dispatcher.RegisterPipeline(eventTypes, actsForPipe1);
             dispatcher.RegisterPipeline(eventTypes, actsForPipe2);
 
@@ -76,7 +76,7 @@ namespace EventStoreSpecs
             var actWrapper = ActWrapper.From(nopAct);
 
             var eventTypes = new List<Type> { typeof(Event1), typeof(Event2) };
-            var acts = new List<Actor> { actWrapper.Act };
+            var acts = new ActList { actWrapper.Act };
             dispatcher.RegisterPipeline(eventTypes, acts);
 
             Event1 event1 = new Event1 { Property = "event1" };
@@ -84,6 +84,8 @@ namespace EventStoreSpecs
             await actWrapper.ActTask;
 
             (actWrapper.Event as Event1).Property.ShouldBeEquivalentTo(event1.Property);
+
+            actWrapper.Rearm();
             Event2 event2 = new Event2 { Property = "event2" };
             dispatcher.Dispatch(event2);
             await actWrapper.ActTask;
@@ -97,7 +99,7 @@ namespace EventStoreSpecs
             var actWrapper = ActWrapper.From(nopAct);
 
             var eventTypes = new List<Type> { typeof(Event1) };
-            var acts = new List<Actor> { actWrapper.Act };
+            var acts = new ActList { actWrapper.Act };
             dispatcher.RegisterPipeline(eventTypes, acts);
 
             var originalEvent = new Event1();
@@ -120,7 +122,7 @@ namespace EventStoreSpecs
                 });
 
             var eventTypes = new List<Type> { typeof(TestReconciliationEvent) };
-            var acts = new List<Actor> { actWrapper.Act };
+            var acts = new ActList { actWrapper.Act };
             dispatcher.RegisterPipeline(eventTypes, acts);
 
             var originalEvent = new TestReconciliationEvent();
