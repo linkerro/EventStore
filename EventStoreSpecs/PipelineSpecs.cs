@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Moq;
 using static EventStoreSpecs.DispatcherSpecs;
 using FluentAssertions;
+using System.Threading.Tasks;
 
 namespace EventStoreSpecs
 {
@@ -27,7 +28,7 @@ namespace EventStoreSpecs
             actWrapper = ActWrapper.From(nopAct);
             pipeline = new Pipeline(
                 new List<Type> { typeof(Event) },
-                new List<Act> { actWrapper.Act },
+                new ActList { actWrapper.Act },
                 dispatcherMock.Object,
                 reconciliationServiceMock.Object,
                 eventStoreMock.Object
@@ -35,36 +36,36 @@ namespace EventStoreSpecs
         }
 
         [TestMethod]
-        public void Pipeline_ShouldFireEvents()
+        public async Task Pipeline_ShouldFireEvents()
         {
             var @event = new Event();
-            pipeline.FireEvent(@event);
+            await pipeline.FireEvent(@event);
             actWrapper.HasBeenCalled.Should().BeTrue();
         }
 
         [TestMethod]
-        public void Pipeline_ShouldPopulateTheContextWithTheDispatcher()
+        public async Task Pipeline_ShouldPopulateTheContextWithTheDispatcher()
         {
             var @event = new Event();
-            pipeline.FireEvent(@event);
+            await pipeline.FireEvent(@event);
 
             actWrapper.PipelineContext.Dispathcer.ShouldBeEquivalentTo(dispatcherMock.Object);
         }
 
         [TestMethod]
-        public void Pipeline_ShouldPopulateTheReconciliationServiceField()
+        public async Task Pipeline_ShouldPopulateTheReconciliationServiceField()
         {
             var @event = new Event();
-            pipeline.FireEvent(@event);
+            await pipeline.FireEvent(@event);
 
             actWrapper.PipelineContext.ReconciliationService.ShouldBeEquivalentTo(reconciliationServiceMock.Object);
         }
 
         [TestMethod]
-        public void Pipeline_ShouldPopulateTheContextWithTheEventStoreField()
+        public async Task Pipeline_ShouldPopulateTheContextWithTheEventStoreField()
         {
             var @event = new Event();
-            pipeline.FireEvent(@event);
+            await pipeline.FireEvent(@event);
 
             actWrapper.PipelineContext.EventStore.ShouldBeEquivalentTo(eventStoreMock.Object);
         }

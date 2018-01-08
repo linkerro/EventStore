@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EventStore
 {
     public class Pipeline
     {
         private IEnumerable<Type> handledEventTypes;
-        private IEnumerable<Act> acts;
+        private ActList acts;
         private IDispatcher dispatcher;
         private IReconciliationService reconciliationService;
         private IEventStore eventStore;
 
-        public Pipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Act> acts, IDispatcher dispatcher, IReconciliationService reconciliationService, IEventStore eventStore)
+        public Pipeline(IEnumerable<Type> handledEventTypes, ActList acts, IDispatcher dispatcher, IReconciliationService reconciliationService, IEventStore eventStore)
         {
             this.handledEventTypes = handledEventTypes;
             this.acts = acts;
@@ -20,7 +21,7 @@ namespace EventStore
             this.eventStore = eventStore;
         }
 
-        public void FireEvent(Event @event)
+        public async Task FireEvent(Event @event)
         {
             foreach (var act in acts)
             {
@@ -30,7 +31,7 @@ namespace EventStore
                     ReconciliationService = reconciliationService,
                     EventStore=eventStore
                 };
-                act(@event, context);
+                await act(@event, context);
             }
         }
     }

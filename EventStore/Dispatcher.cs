@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 namespace EventStore
 {
     public delegate void Act(Event @event, PipelineContext context);
+    public delegate Task ActAsync(Event @event, PipelineContext context);
 
     public class Dispatcher : IDispatcher
     {
@@ -19,7 +20,7 @@ namespace EventStore
             this.reconciliationService = reconciliationService;
         }
 
-        public void RegisterPipeline(IEnumerable<Type> handledEventTypes, IEnumerable<Act> acts)
+        public void RegisterPipeline(IEnumerable<Type> handledEventTypes, ActList acts)
         {
             var pipeline = new Pipeline(handledEventTypes, acts, this, reconciliationService, eventStore);
 
@@ -41,7 +42,7 @@ namespace EventStore
             {
                 foreach (var pipeline in pipelines[eventType])
                 {
-                    pipeline.FireEvent(savedEvent);
+                    await pipeline.FireEvent(savedEvent);
                 }
             }
         }
@@ -53,6 +54,15 @@ namespace EventStore
             var reconciliationTask = reconciliationService.GetReconciliationTask(reconciliationId);
             Dispatch(reconciliationEvent);
             return reconciliationTask;
+        }
+    }
+
+    public class ActList : List<ActAsync>
+    {
+        public void Add(Act act)
+        {
+            ActAsync asyncAct = (e, context) => Task.Run(()=>act(e,context));
+            Add(asyncAct);
         }
     }
 }
