@@ -12,11 +12,11 @@ namespace EventStoreSpecs
     [TestClass]
     public class PipelineSpecs
     {
-        private Act nopAct = (e, context) => { };
+        private Act<Event> nopAct = (e, context) => { };
         private Mock<IDispatcher> dispatcherMock;
         private Mock<IReconciliationService> reconciliationServiceMock;
         private Mock<IEventStore> eventStoreMock;
-        private ActWrapper actWrapper;
+        private ActWrapper<Event> actWrapper;
         private Pipeline pipeline;
 
         [TestInitialize]
@@ -25,7 +25,7 @@ namespace EventStoreSpecs
             dispatcherMock = new Mock<IDispatcher>(MockBehavior.Strict);
             reconciliationServiceMock = new Mock<IReconciliationService>(MockBehavior.Strict);
             eventStoreMock = new Mock<IEventStore>(MockBehavior.Strict);
-            actWrapper = ActWrapper.From(nopAct);
+            actWrapper = ActWrapper<Event>.From(nopAct);
             pipeline = new Pipeline(
                 new List<Type> { typeof(Event) },
                 new ActList { actWrapper.Act },

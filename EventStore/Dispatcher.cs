@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 
 namespace EventStore
 {
-    public delegate void Act(Event @event, PipelineContext context);
-    public delegate Task ActAsync(Event @event, PipelineContext context);
+    public delegate void Act<TEvent>(TEvent @event, PipelineContext context) where TEvent:Event;
+    public delegate Task ActAsync<TEvent>(TEvent @event, PipelineContext context) where TEvent:Event;
 
     public class Dispatcher : IDispatcher
     {
@@ -57,11 +57,11 @@ namespace EventStore
         }
     }
 
-    public class ActList : List<ActAsync>
+    public class ActList : List<Delegate>
     {
-        public void Add(Act act)
+        public void Add<TEvent>(Act<TEvent> act)where TEvent:Event
         {
-            ActAsync asyncAct = (e, context) => Task.Run(()=>act(e,context));
+            ActAsync<TEvent> asyncAct = (e, context) => Task.Run(()=>act(e,context));
             Add(asyncAct);
         }
     }

@@ -31,7 +31,7 @@ namespace EventStore
                     ReconciliationService = reconciliationService,
                     EventStore=eventStore
                 };
-                await act(@event, context);
+                await (Task)act.DynamicInvoke(new object[] { @event, context });
             }
         }
     }

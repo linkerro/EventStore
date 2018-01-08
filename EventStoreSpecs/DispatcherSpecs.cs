@@ -13,7 +13,7 @@ namespace EventStoreSpecs
         private MemoryEventStore eventStore;
         private ReconciliationService reconciliationService;
         private Dispatcher dispatcher;
-        private Act nopAct = (e, context) => { };
+        private Act<Event> nopAct = (e, context) => { };
 
         [TestInitialize]
         public void TestInitialization()
@@ -39,7 +39,7 @@ namespace EventStoreSpecs
         [TestMethod]
         public async Task DispatcherShouldDispatchEventToPipelineAsync()
         {
-            var actWrapper = ActWrapper.From(nopAct);
+            var actWrapper = ActWrapper<Event>.From(nopAct);
             var actions = new ActList { actWrapper.Act };
             var eventTypes = new List<Type>
             {
@@ -54,8 +54,8 @@ namespace EventStoreSpecs
         [TestMethod]
         public async Task DispatcherShouldRegisterMultiplePipelinesPerEventAsync()
         {
-            var actWrapperForPipe1 = ActWrapper.From(nopAct);
-            var actWrapperForPipe2 = ActWrapper.From(nopAct);
+            var actWrapperForPipe1 = ActWrapper<Event>.From(nopAct);
+            var actWrapperForPipe2 = ActWrapper<Event>.From(nopAct);
 
             var eventTypes = new List<Type> { typeof(Event1) };
             var actsForPipe1 = new ActList { actWrapperForPipe1.Act };
@@ -73,7 +73,7 @@ namespace EventStoreSpecs
         [TestMethod]
         public async Task DispatcherShouldRegisterPipelineForMultipleEventsAsync()
         {
-            var actWrapper = ActWrapper.From(nopAct);
+            var actWrapper = ActWrapper<Event>.From(nopAct);
 
             var eventTypes = new List<Type> { typeof(Event1), typeof(Event2) };
             var acts = new ActList { actWrapper.Act };
@@ -96,7 +96,7 @@ namespace EventStoreSpecs
         [TestMethod]
         public async Task DispatcherShouldSaveEventAsync()
         {
-            var actWrapper = ActWrapper.From(nopAct);
+            var actWrapper = ActWrapper<Event>.From(nopAct);
 
             var eventTypes = new List<Type> { typeof(Event1) };
             var acts = new ActList { actWrapper.Act };
@@ -114,7 +114,7 @@ namespace EventStoreSpecs
         public async Task DispatcherShoulDispatchWithReconciliation()
         {
             var resolvedEvent = new ReconciliationEvent { Id = Guid.NewGuid() };
-            var actWrapper = ActWrapper
+            var actWrapper = ActWrapper<Event>
                 .From((e, context) =>
                 {
                     resolvedEvent.ReconciliationId = (e as ReconciliationEvent).ReconciliationId;
