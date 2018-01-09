@@ -69,5 +69,58 @@ namespace EventStoreSpecs
 
             actWrapper.PipelineContext.EventStore.ShouldBeEquivalentTo(eventStoreMock.Object);
         }
+
+        [TestMethod]
+        public async Task Pipeline_ShouldHandleExceptions()
+        {
+            var @event = new Event();
+            pipeline = new Pipeline(
+                new Type[] { typeof(Event) },
+                new ActList
+                {
+                    (Event actEvent,PipelineContext context)=>
+                    {
+                        throw new Exception();
+                    }
+                },
+                dispatcherMock.Object,
+                reconciliationServiceMock.Object,
+                eventStoreMock.Object);
+
+            dispatcherMock
+                .Setup(dispatcher => dispatcher.Dispatch(It.IsAny<ExceptionEvent>()));
+
+            await pipeline.FireEvent(@event);
+        }
+
+        [TestMethod]
+        public async Task Pipeline_ShouldReconcileEventsWithException()
+        {
+            Guid reconciliationId = Guid.NewGuid();
+            var @event = new ReconciliationEvent {
+                ReconciliationId = reconciliationId
+            };
+            pipeline = new Pipeline(
+                new Type[] { typeof(Event) },
+                new ActList
+                {
+                    (Event actEvent,PipelineContext context)=>
+                    {
+                        throw new Exception();
+                    }
+                },
+                dispatcherMock.Object,
+                reconciliationServiceMock.Object,
+                eventStoreMock.Object);
+
+            dispatcherMock
+                .Setup(dispatcher => dispatcher.Dispatch(It.IsAny<ExceptionEvent>()));
+            ExceptionEvent thrownExceptionEvent=null;
+            reconciliationServiceMock
+                .Setup(service => service.ResolveTask(It.IsAny<ExceptionEvent>()))
+                .Callback<Event>((receivedEvent) => thrownExceptionEvent = (ExceptionEvent)receivedEvent);
+            await pipeline.FireEvent(@event);
+            thrownExceptionEvent.ReconciliationId.Should().Be(reconciliationId);
+        }
     }
 }

@@ -29,9 +29,32 @@ namespace EventStore
                 {
                     Dispathcer = dispatcher,
                     ReconciliationService = reconciliationService,
-                    EventStore=eventStore
+                    EventStore = eventStore
                 };
-                await (Task)act.DynamicInvoke(new object[] { @event, context });
+                try
+                {
+                    await (Task)act.DynamicInvoke(new object[] { @event, context });
+                }
+                catch (Exception ex)
+                {
+
+                    var exceptionEvent = new ExceptionEvent
+                    {
+                        Exception = ex,
+                        OriginalEvent = @event
+                    };
+                    switch (@event)
+                    {
+                        case ReconciliationEvent reconciliationEvent:
+                            exceptionEvent.ReconciliationId = reconciliationEvent.ReconciliationId;
+                            reconciliationService.ResolveTask(exceptionEvent);
+                            break;
+                        default:
+                            dispatcher.Dispatch(exceptionEvent);
+                            break;
+                    }
+                    dispatcher.Dispatch(exceptionEvent);
+                }
             }
         }
     }
